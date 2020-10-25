@@ -36,10 +36,10 @@ public class StockQuoteController {
             service.save(stock);
         } catch (StockQuoteException e) {
 
-            return new ResponseEntity<String>("Unexpected request.", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Unexpected request.", HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
             
-            return new ResponseEntity<String>("Unexpected error. Contact administrator", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Unexpected error. Contact administrator", HttpStatus.INTERNAL_SERVER_ERROR);
         }
         
         return new ResponseEntity<>("Quote(s) successfully added", HttpStatus.OK);
