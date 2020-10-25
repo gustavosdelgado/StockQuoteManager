@@ -7,14 +7,11 @@ import java.util.Map;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import javax.naming.CommunicationException;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
@@ -24,14 +21,20 @@ import app.devir.stockquotemanager.exception.StockQuoteManagerException;
 public class StockQuoteManagerClient {
 
     private static final String STOCK_MANAGER_URL = "http://localhost:8080";
+    private static final String HOST = "localhost";
+    private static final String PORT = "8081";
+    
+    private RestTemplate restTemplate;
+    private ResponseEntity<String> response;
+
+    public StockQuoteManagerClient() {
+        this.restTemplate = new RestTemplate();
+    }
 
     public void verifyStock(String stockId)
             throws StockQuoteManagerException, CommunicationException, JsonProcessingException {
 
-        RestTemplate restTemplate = new RestTemplate();
-
-        LogManager.getLogger().info("URL: " + STOCK_MANAGER_URL);
-        ResponseEntity<String> response = restTemplate.getForEntity(STOCK_MANAGER_URL + "/stock", String.class);
+        response = requestStockVerify();
 
         if (HttpStatus.OK.equals(response.getStatusCode())) {
             ObjectMapper mapper = new ObjectMapper();
@@ -39,8 +42,6 @@ public class StockQuoteManagerClient {
 
             String json = response.getBody();
             List<StockQuoteManager> stocksListed = mapper.readValue(json, new TypeReference<List<StockQuoteManager>>(){});
-
-            stocksListed.forEach(s -> LogManager.getLogger().info("ID: " + s.getId()));
 
             boolean stockInList = false;
             for (StockQuoteManager s : stocksListed) {
@@ -53,6 +54,19 @@ public class StockQuoteManagerClient {
             throw new CommunicationException("Communication to StockManager has failed");
         }
 
+    }
+
+    public ResponseEntity<String> requestNotification() {
+        Map<String, String> map = new HashMap<>();
+        map.put("host", HOST);
+        map.put("port", PORT);
+
+        return restTemplate.postForEntity(STOCK_MANAGER_URL + "notification", map, String.class);
+    }
+
+    @Cacheable("stock")
+    public ResponseEntity<String> requestStockVerify() {
+        return restTemplate.getForEntity(STOCK_MANAGER_URL + "/stock", String.class);
     }
 
 }

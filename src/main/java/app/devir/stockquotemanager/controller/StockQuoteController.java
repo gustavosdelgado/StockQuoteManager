@@ -9,8 +9,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,7 +28,7 @@ import app.devir.stockquotemanager.exception.StockQuoteManagerException;
 import app.devir.stockquotemanager.service.StockService;
 
 @RestController
-@RequestMapping("/stock")
+@RequestMapping()
 public class StockQuoteController {
 
     private static final Logger LOGGER = LogManager.getLogger();
@@ -34,7 +36,10 @@ public class StockQuoteController {
     @Autowired
     private StockService service;
 
-    @PostMapping(consumes = "application/json")
+    @Autowired
+    private CacheManager cacheManager;
+
+    @PostMapping(value = "/stock", consumes = "application/json")
     public ResponseEntity<String> create(@RequestBody String stockJson) {
         try {
             ObjectMapper mapper = new ObjectMapper();
@@ -59,7 +64,7 @@ public class StockQuoteController {
         return new ResponseEntity<>("Quote successfully added.", HttpStatus.OK);
     }
 
-    @GetMapping
+    @GetMapping("/stock")
     public ResponseEntity<List<StockEntity>> findAll() {
         List<StockEntity> stocks = new ArrayList<>();
         try {
@@ -76,7 +81,7 @@ public class StockQuoteController {
         return new ResponseEntity<>(stocks, HttpStatus.OK);
     }
 
-    @GetMapping("{id}")
+    @GetMapping("/stock/{id}")
     public ResponseEntity<StockEntity> findById(@PathVariable String id) {
         Optional<StockEntity> stock;
         try {
@@ -91,6 +96,12 @@ public class StockQuoteController {
         }
 
         return new ResponseEntity<>(stock.get(), HttpStatus.OK);
+    }
+
+    @DeleteMapping("stockcache")
+    public void clearCache() {
+        cacheManager.getCacheNames().parallelStream().forEach(name -> cacheManager.getCache(name).clear());
+        LOGGER.info("Cache cleared");
     }
 
 }
