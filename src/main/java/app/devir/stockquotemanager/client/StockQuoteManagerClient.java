@@ -26,6 +26,7 @@ public class StockQuoteManagerClient {
     
     private RestTemplate restTemplate;
     private ResponseEntity<String> response;
+    public boolean isStockInList;
 
     public StockQuoteManagerClient() {
         this.restTemplate = new RestTemplate();
@@ -43,12 +44,11 @@ public class StockQuoteManagerClient {
             String json = response.getBody();
             List<StockQuoteManager> stocksListed = mapper.readValue(json, new TypeReference<List<StockQuoteManager>>(){});
 
-            boolean stockInList = false;
             for (StockQuoteManager s : stocksListed) {
-                if (stockId.equalsIgnoreCase(s.getId())) stockInList = true;
+                if (stockId.equalsIgnoreCase(s.getId())) isStockInList = true;
             }
 
-            if (!stockInList) throw new StockQuoteManagerException("Stock ID not found");
+            if (!isStockInList) throw new StockQuoteManagerException("Stock ID not found");
 
         } else {
             throw new CommunicationException("Communication to StockManager has failed");
@@ -67,6 +67,10 @@ public class StockQuoteManagerClient {
     @Cacheable("stock")
     public ResponseEntity<String> requestStockVerify() {
         return restTemplate.getForEntity(STOCK_MANAGER_URL + "/stock", String.class);
+    }
+
+    public boolean isStockInList() {
+        return isStockInList;
     }
 
 }
